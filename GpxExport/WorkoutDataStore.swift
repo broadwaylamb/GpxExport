@@ -1,5 +1,5 @@
 import HealthKit
-import WatchKit
+import CoreLocation
 
 class WorkoutDataStore {
     private var healthStore: HKHealthStore
@@ -14,7 +14,7 @@ class WorkoutDataStore {
         let hrType = HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.heartRate)!
         let predicate = HKQuery.predicateForSamples(withStart: workout.startDate, end: workout.endDate, options: HKQueryOptions.strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
-
+        
         let heartRateQuery = HKSampleQuery(sampleType: hrType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) {
             (query, samples, error) in
             
@@ -51,14 +51,14 @@ class WorkoutDataStore {
             }
             
             guard let routeSamples: [HKWorkoutRoute] = samples as? [HKWorkoutRoute] else { print("No route samples"); return }
-
+            
             if (routeSamples.count == 0){
                 completion([CLLocation](), nil)
                 return;
             }
             var sampleCounter = 0
             var routeLocations:[CLLocation] = []
-
+            
             for routeSample: HKWorkoutRoute in routeSamples {
                 
                 let locationQuery: HKWorkoutRouteQuery = HKWorkoutRouteQuery(route: routeSample) { _, locationResults, done, error in
@@ -69,7 +69,7 @@ class WorkoutDataStore {
                         }
                         return
                     }
-
+                    
                     if done {
                         sampleCounter += 1
                         if sampleCounter != routeSamples.count {
@@ -105,7 +105,7 @@ class WorkoutDataStore {
             HKQuery.predicateForWorkouts(with: .running),
             HKQuery.predicateForWorkouts(with: .cycling),
             HKQuery.predicateForWorkouts(with: .swimming),
-            ])
+        ])
         
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
         

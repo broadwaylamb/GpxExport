@@ -1,4 +1,3 @@
-
 import HealthKit
 
 class HealthKitSetupAssistant {

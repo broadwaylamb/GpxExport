@@ -1,66 +1,65 @@
 import UIKit
 import HealthKit
-import WatchKit
 
 class WorkoutsTableViewController: UITableViewController {
 
-  private enum WorkoutsSegues: String {
-    case showCreateWorkout
-    case finishedCreatingWorkout
-  }
+    private enum WorkoutsSegues: String {
+        case showCreateWorkout
+        case finishedCreatingWorkout
+    }
 
     lazy private var workoutStore: WorkoutDataStore = {
         return WorkoutDataStore()
     }()
 
-  private var workouts: [HKWorkout]?
+    private var workouts: [HKWorkout]?
 
-  private let prancerciseWorkoutCellID = "PrancerciseWorkoutCell"
+    private let prancerciseWorkoutCellID = "PrancerciseWorkoutCell"
 
-  lazy var dateFormatter:DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.timeStyle = .short
-    formatter.dateStyle = .medium
-    return formatter
-  }()
+    lazy var dateFormatter:DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .medium
+        return formatter
+    }()
 
-  lazy var filenameDateFormatter: DateFormatter = {
-    let formatter = DateFormatter();
-    formatter.dateFormat = "yyyy-MM-dd hh.mm.ss"
-    return formatter;
-  }()
+    lazy var filenameDateFormatter: DateFormatter = {
+        let formatter = DateFormatter();
+        formatter.dateFormat = "yyyy-MM-dd hh.mm.ss"
+        return formatter;
+    }()
 
-  override func viewDidLoad() {
-    super.viewDidLoad()
-    self.clearsSelectionOnViewWillAppear = false
-  }
-
-  override func viewWillAppear(_ animated: Bool) {
-    super.viewWillAppear(animated)
-    reloadWorkouts()
-  }
-
-  func reloadWorkouts() {
-
-    workoutStore.loadWorkouts() { (workouts, error) in
-      self.workouts = workouts
-      self.tableView.reloadData()
-    }
-  }
-
-  //MARK: UITableView DataSource
-  override func numberOfSections(in tableView: UITableView) -> Int {
-    return 1
-  }
-
-  override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-
-    guard let workouts = workouts else {
-      return 0
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.clearsSelectionOnViewWillAppear = false
     }
 
-    return workouts.count
-  }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        reloadWorkouts()
+    }
+
+    func reloadWorkouts() {
+
+        workoutStore.loadWorkouts() { (workouts, error) in
+            self.workouts = workouts
+            self.tableView.reloadData()
+        }
+    }
+
+    //MARK: UITableView DataSource
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+
+        guard let workouts = workouts else {
+            return 0
+        }
+
+        return workouts.count
+    }
 
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -77,10 +76,10 @@ class WorkoutsTableViewController: UITableViewController {
         let workout = workouts[indexPath.row];
         let workout_name: String = {
             switch workout.workoutActivityType {
-                case .cycling: return "Cycle"
-                case .running: return "Run"
-                case .walking: return "Walk"
-                default: return "Workout"
+            case .cycling: return "Cycle"
+            case .running: return "Run"
+            case .walking: return "Walk"
+            default: return "Workout"
             }
         }()
         let workout_title = "\(workout_name) - \(self.dateFormatter.string(from: workout.startDate))"
@@ -119,7 +118,7 @@ class WorkoutsTableViewController: UITableViewController {
             var hr_string = "";
             file.write(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?><gpx version=\"1.1\" creator=\"Apple Workouts (via pilif's hack of the week)\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.topografix.com/GPX/1/1\" xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\" xmlns:gpxtpx=\"http://www.garmin.com/xmlschemas/TrackPointExtension/v1\"><trk><name><![CDATA[\(workout_title)]]></name><time>\(iso_formatter.string(from: workout.startDate))</time><trkseg>"
-                        .data(using: .utf8)!
+                    .data(using: .utf8)!
             )
 
             self.workoutStore.route(for: workouts[indexPath.row]){
@@ -155,30 +154,30 @@ class WorkoutsTableViewController: UITableViewController {
         }
     }
 
-  override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-    guard let workouts = workouts else {
-      fatalError("CellForRowAtIndexPath should never get called if there are no workouts")
+        guard let workouts = workouts else {
+            fatalError("CellForRowAtIndexPath should never get called if there are no workouts")
+        }
+
+        //1. Get a cell to display the workout in.
+        let cell = tableView.dequeueReusableCell(withIdentifier: prancerciseWorkoutCellID,
+                                                 for: indexPath)
+
+        //2. Get the workout corresponding to this row.
+        let workout = workouts[indexPath.row]
+
+        //3. Show the workout's start date in the label.
+        cell.textLabel?.text = dateFormatter.string(from: workout.startDate)
+
+        //4. Show the Calorie burn in the lower label.
+        if let caloriesBurned = workout.totalEnergyBurned?.doubleValue(for: HKUnit.kilocalorie()) {
+            let formattedCalories = String(format: "CaloriesBurned: %.2f", caloriesBurned)
+            cell.detailTextLabel?.text = formattedCalories
+        } else {
+            cell.detailTextLabel?.text = nil
+        }
+
+        return cell
     }
-
-    //1. Get a cell to display the workout in.
-    let cell = tableView.dequeueReusableCell(withIdentifier: prancerciseWorkoutCellID,
-                                             for: indexPath)
-
-    //2. Get the workout corresponding to this row.
-    let workout = workouts[indexPath.row]
-
-    //3. Show the workout's start date in the label.
-    cell.textLabel?.text = dateFormatter.string(from: workout.startDate)
-
-    //4. Show the Calorie burn in the lower label.
-    if let caloriesBurned = workout.totalEnergyBurned?.doubleValue(for: HKUnit.kilocalorie()) {
-      let formattedCalories = String(format: "CaloriesBurned: %.2f", caloriesBurned)
-      cell.detailTextLabel?.text = formattedCalories
-    } else {
-      cell.detailTextLabel?.text = nil
-    }
-
-    return cell
-  }
 }
